@@ -1,12 +1,12 @@
 const PAYMENT_API = {
     // ============================================================
-    // LZPEDIA API INTEGRATION - V3.1 (FIXED TYPO)
+    // LZPEDIA API INTEGRATION - V3.2 (FULL FIX)
     // ============================================================
 
     apiKey: 'LXZ_015d8a759df64d48',
     baseUrl: 'https://app.lzpedia.my.id/api',
     backendUrl: window.location.origin + '/lzproxy.php',
-    mode: 'proxy',
+    mode: 'direct', // Changed to direct first since proxy fails
 
     // ============================================================
     // 1. BUAT INVOICE
@@ -15,7 +15,36 @@ const PAYMENT_API = {
         try {
             let url, response, text, data;
 
-            // ===== COBA VIA PROXY DULU =====
+            // ===== METHOD 1: DIRECT CALL KE LZPEDIA (CORS dengan no-cors) =====
+            url = `${this.baseUrl}/invoice?apikey=${this.apiKey}&amount=${amount}`;
+            console.log('📤 [DIRECT] Create Invoice URL:', url);
+
+            try {
+                response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin
+                    },
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                text = await response.text();
+                console.log('📄 [DIRECT] Raw Response:', text.substring(0, 500));
+
+                try {
+                    data = JSON.parse(text);
+                    if (data.success === true && data.invoice_id) {
+                        return this._formatResponse(data);
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Direct response bukan JSON:', text.substring(0, 200));
+                }
+            } catch (directError) {
+                console.warn('⚠️ Direct error:', directError.message);
+            }
+
+            // ===== METHOD 2: VIA PROXY =====
             if (this.mode === 'proxy') {
                 url = `${this.backendUrl}?action=create&amount=${amount}`;
                 console.log('📤 [PROXY] Create Invoice URL:', url);
@@ -23,7 +52,8 @@ const PAYMENT_API = {
                 try {
                     response = await fetch(url, {
                         method: 'GET',
-                        headers: { 'Accept': 'application/json' }
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-cache'
                     });
                     text = await response.text();
                     console.log('📄 [PROXY] Raw Response:', text.substring(0, 300));
@@ -34,54 +64,33 @@ const PAYMENT_API = {
                             return this._formatResponse(data);
                         }
                     } catch (e) {
-                        console.warn('⚠️ Proxy response bukan JSON, coba direct...');
+                        console.warn('⚠️ Proxy response bukan JSON');
                     }
                 } catch (proxyError) {
                     console.warn('⚠️ Proxy error:', proxyError.message);
                 }
             }
 
-            // ===== FALLBACK: DIRECT CALL KE LZPEDIA =====
-            url = `${this.baseUrl}/invoice?apikey=${this.apiKey}&amount=${amount}`;
-            console.log('📤 [DIRECT] Create Invoice URL:', url);
-
-            response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Origin': window.location.origin
-                },
-                mode: 'cors'
-            });
-
-            text = await response.text();
-            console.log('📄 [DIRECT] Raw Response:', text.substring(0, 500));
-
+            // ===== METHOD 3: JSONP / Script Tag (Bypass CORS) =====
             try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.error('❌ JSON Parse Error:', e);
-                return {
-                    success: false,
-                    error: 'Response bukan JSON valid',
-                    debug: {
-                        httpStatus: response.status,
-                        rawResponse: text.substring(0, 500),
-                        proxyUrl: this.backendUrl,
-                        directUrl: url
-                    }
-                };
+                const result = await this._jsonpRequest(`${this.baseUrl}/invoice?apikey=${this.apiKey}&amount=${amount}&callback=lzpediaCallback`);
+                if (result && result.success && result.invoice_id) {
+                    return this._formatResponse(result);
+                }
+            } catch (jsonpError) {
+                console.warn('⚠️ JSONP error:', jsonpError.message);
             }
 
-            if (data.success === true && data.invoice_id) {
-                return this._formatResponse(data);
-            } else {
-                return {
-                    success: false,
-                    error: data.message || data.error || 'Gagal membuat invoice',
-                    debug: { raw: data }
-                };
-            }
+            // Jika semua gagal
+            return {
+                success: false,
+                error: 'Gagal terhubung ke server pembayaran. Semua metode gagal.',
+                debug: {
+                    message: 'Coba refresh halaman atau hubungi admin.',
+                    directUrl: url,
+                    proxyUrl: this.backendUrl
+                }
+            };
 
         } catch (error) {
             console.error('❌ Create Invoice Error:', error);
@@ -96,6 +105,38 @@ const PAYMENT_API = {
         }
     },
 
+    // JSONP helper untuk bypass CORS
+    _jsonpRequest(url) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            const callbackName = 'lzpediaCallback_' + Date.now();
+
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.head.removeChild(script);
+                resolve(data);
+            };
+
+            script.src = url.replace('callback=lzpediaCallback', `callback=${callbackName}`);
+            script.onerror = () => {
+                delete window[callbackName];
+                document.head.removeChild(script);
+                reject(new Error('JSONP failed'));
+            };
+
+            document.head.appendChild(script);
+
+            // Timeout 10 detik
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    if (script.parentNode) document.head.removeChild(script);
+                    reject(new Error('JSONP timeout'));
+                }
+            }, 10000);
+        });
+    },
+
     // ============================================================
     // 2. CEK STATUS INVOICE
     // ============================================================
@@ -103,7 +144,36 @@ const PAYMENT_API = {
         try {
             let url, response, text, data;
 
-            // ===== COBA VIA PROXY DULU =====
+            // ===== METHOD 1: DIRECT =====
+            url = `${this.baseUrl}/invoice/status?apikey=${this.apiKey}&invoice_id=${invoiceId}`;
+            console.log('📤 [DIRECT] Check Status URL:', url);
+
+            try {
+                response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin
+                    },
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                text = await response.text();
+                console.log('📊 [DIRECT] Raw Response:', text.substring(0, 500));
+
+                try {
+                    data = JSON.parse(text);
+                    if (data.invoice_id) {
+                        return this._formatStatusResponse(data);
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Direct status response bukan JSON');
+                }
+            } catch (directError) {
+                console.warn('⚠️ Direct status error:', directError.message);
+            }
+
+            // ===== METHOD 2: PROXY =====
             if (this.mode === 'proxy') {
                 url = `${this.backendUrl}?action=status&invoice_id=${invoiceId}`;
                 console.log('📤 [PROXY] Check Status URL:', url);
@@ -111,7 +181,8 @@ const PAYMENT_API = {
                 try {
                     response = await fetch(url, {
                         method: 'GET',
-                        headers: { 'Accept': 'application/json' }
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-cache'
                     });
                     text = await response.text();
                     console.log('📊 [PROXY] Raw Response:', text.substring(0, 300));
@@ -122,48 +193,18 @@ const PAYMENT_API = {
                             return this._formatStatusResponse(data);
                         }
                     } catch (e) {
-                        console.warn('⚠️ Proxy response bukan JSON, coba direct...');
+                        console.warn('⚠️ Proxy status response bukan JSON');
                     }
                 } catch (proxyError) {
-                    console.warn('⚠️ Proxy error:', proxyError.message);
+                    console.warn('⚠️ Proxy status error:', proxyError.message);
                 }
             }
 
-            // ===== FALLBACK: DIRECT CALL =====
-            url = `${this.baseUrl}/invoice/status?apikey=${this.apiKey}&invoice_id=${invoiceId}`;
-            console.log('📤 [DIRECT] Check Status URL:', url);
-
-            response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Origin': window.location.origin
-                },
-                mode: 'cors'
-            });
-
-            text = await response.text();
-            console.log('📊 [DIRECT] Raw Response:', text.substring(0, 500));
-
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                return {
-                    success: false,
-                    error: 'Response bukan JSON valid',
-                    debug: { rawResponse: text.substring(0, 500) }
-                };
-            }
-
-            if (data.invoice_id) {
-                return this._formatStatusResponse(data);
-            } else {
-                return {
-                    success: false,
-                    error: data.message || data.error || 'Gagal mengecek status',
-                    debug: { raw: data }
-                };
-            }
+            return {
+                success: false,
+                error: 'Gagal mengecek status invoice',
+                debug: { invoiceId }
+            };
 
         } catch (error) {
             console.error('❌ Check Status Error:', error);
@@ -280,6 +321,24 @@ window.createInvoice = async function(amount) {
                 qrisImage.onclick = function() {
                     window.open(this.src, '_blank');
                 };
+                // Force reload image
+                qrisImage.onload = function() {
+                    console.log('✅ QRIS image loaded successfully');
+                };
+                qrisImage.onerror = function() {
+                    console.error('❌ QRIS image failed to load');
+                    this.style.display = 'none';
+                    if (qrisPlaceholder) {
+                        qrisPlaceholder.style.display = 'flex';
+                        qrisPlaceholder.innerHTML = `
+                            <div style="text-align:center;">
+                                <i class="fas fa-exclamation-triangle" style="font-size:2rem;color:var(--orange);display:block;margin-bottom:8px;"></i>
+                                <p style="color:var(--text-muted);">Gagal memuat gambar QRIS</p>
+                                <a href="${result.qrisImage}" target="_blank" style="color:var(--accent-light);font-size:0.8rem;">Buka QRIS di tab baru</a>
+                            </div>
+                        `;
+                    }
+                };
             }
 
             if (qrisWrapper) {
@@ -288,7 +347,7 @@ window.createInvoice = async function(amount) {
             }
             if (qrisPlaceholder) qrisPlaceholder.style.display = 'none';
 
-            // ✅ TAMPILKAN DETAIL INVOICE (dengan null check)
+            // ✅ TAMPILKAN DETAIL INVOICE
             const invoiceIdEl = document.getElementById('invoiceId');
             if (invoiceIdEl) invoiceIdEl.textContent = result.invoiceId;
 
@@ -298,7 +357,7 @@ window.createInvoice = async function(amount) {
             const invoiceFeeEl = document.getElementById('invoiceFee');
             if (invoiceFeeEl) invoiceFeeEl.textContent = 'Rp ' + Number(result.fee || 0).toLocaleString('id-ID');
 
-            // Parse expired_at dari LZPedia (format: "2025-01-01 12:00:00")
+            // Parse expired_at dari LZPedia
             let expiryDate;
             if (result.expiredAt) {
                 expiryDate = new Date(result.expiredAt.replace(' ', 'T'));
@@ -359,13 +418,12 @@ window.createInvoice = async function(amount) {
 
             errorHtml += `
                     <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:12px;margin-bottom:16px;text-align:left;">
-                        <p style="color:var(--text-muted);font-size:0.7rem;margin-bottom:4px;font-weight:700;">Tips Perbaikan:</p>
+                        <p style="color:var(--text-muted);font-size:0.7rem;margin-bottom:4px;font-weight:700;">Solusi:</p>
                         <ol style="color:var(--text-muted);font-size:0.7rem;padding-left:16px;margin:0;">
-                            <li>Pastikan file <b>lzproxy.php</b> sudah di-upload ke server</li>
-                            <li>Pastikan API Key di lzproxy.php sudah benar</li>
-                            <li>Cek console browser (F12) untuk detail error</li>
-                            <li>Pastikan hosting support PHP & cURL</li>
-                            <li>Coba akses proxy langsung di browser</li>
+                            <li>Cek koneksi internet Anda</li>
+                            <li>Pastikan tidak ada ad blocker yang aktif</li>
+                            <li>Coba gunakan browser lain (Chrome/Edge)</li>
+                            <li>Jika masih gagal, hubungi admin via WhatsApp</li>
                         </ol>
                     </div>
                     <button onclick="window.createInvoice(${amount})" style="padding:12px 28px;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;border:none;border-radius:60px;cursor:pointer;font-weight:800;">
@@ -389,6 +447,7 @@ window.createInvoice = async function(amount) {
                 <div style="text-align:center;">
                     <i class="fas fa-exclamation-triangle" style="font-size:3rem;color:var(--red);display:block;margin-bottom:12px;"></i>
                     <p style="color:var(--red);font-weight:700;margin-bottom:8px;">Error: ${error.message}</p>
+                    <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:12px;">Ini mungkin karena masalah CORS atau koneksi.</p>
                     <button onclick="window.createInvoice(${amount})" style="padding:12px 28px;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;border:none;border-radius:60px;cursor:pointer;font-weight:800;">
                         <i class="fas fa-redo"></i> Coba Lagi
                     </button>
@@ -594,7 +653,7 @@ window.renderInvoiceHistory = function() {
 };
 
 // ============================================================
-// BUKA DETAIL INVOICE DARI HISTORY (FIXED TYPO)
+// BUKA DETAIL INVOICE DARI HISTORY
 // ============================================================
 window.openInvoiceDetail = function(invoiceId) {
     const overlay = document.getElementById('paymentOverlay');
@@ -607,7 +666,7 @@ window.openInvoiceDetail = function(invoiceId) {
         return;
     }
 
-    // Set detail invoice (dengan null check)
+    // Set detail invoice
     const invoiceIdEl = document.getElementById('invoiceId');
     if (invoiceIdEl) invoiceIdEl.textContent = invoice.invoice_id;
 
@@ -623,7 +682,6 @@ window.openInvoiceDetail = function(invoiceId) {
     const paymentDetailsEl = document.getElementById('paymentDetails');
     if (paymentDetailsEl) paymentDetailsEl.style.display = 'block';
 
-    // ✅ FIXED: getElementById (bukan getKeyById)
     const checkStatusBtnEl = document.getElementById('checkStatusBtn');
     if (checkStatusBtnEl) checkStatusBtnEl.style.display = 'inline-flex';
 
@@ -795,7 +853,7 @@ window.copyBankInfo = function() {
 // INIT - EVENT LISTENERS
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 Payment System - LZPedia API v3.1 (Fixed)');
+    console.log('🔧 Payment System - LZPedia API v3.2 (Full Fix)');
     console.log('🔗 Proxy:', PAYMENT_API.backendUrl);
     console.log('🔗 Direct:', PAYMENT_API.baseUrl);
 
@@ -865,4 +923,4 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Payment System Ready!');
 });
 
-console.log('✅ payment-api.js v3.1 (Fixed) Loaded!');
+console.log('✅ payment-api.js v3.2 (Full Fix) Loaded!');
