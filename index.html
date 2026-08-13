@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JOELL SHOP · Next-Gen Digital Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- ✅ TAMBAHKAN INI -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="payment.css">
+</head>
+<body>
+<canvas id="particlesCanvas"></canvas>
+
+<div class="app-container">
+    <!-- HEADER -->
+    <header class="top-header">
+        <div class="logo-area" id="logoArea" title="Klik 5x untuk Mode Admin">
+            <img src="https://files.catbox.moe/ijemcy.png" alt="logo" loading="lazy">
+            <span>JOELL SHOP</span>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" id="themeToggle" title="Toggle Dark/Light Mode">
+                <i class="fas fa-moon"></i>
+            </button>
+            <div id="userSection">
+                <button class="header-btn" id="loginBtn" title="Login">
+                    <i class="fas fa-sign-in-alt"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+        <div class="hero-section">
+            <div class="hero-video-wrap">
+                <video src="https://files.catbox.moe/trw5j2.mp4" autoplay loop playsinline muted class="hero-video" id="heroVideo"></video>
+                <div class="hero-overlay"></div>
+                <button class="sound-toggle" id="soundToggle" aria-label="Toggle sound">
+                    <i class="fas fa-volume-mute"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="hero-text-card">
+            <h1 class="hero-title">Solusi Digital <span class="typing-text" id="typingText"></span><span class="cursor">|</span></h1>
+            <p class="hero-subtitle">Bot WhatsApp, Hosting, Script & Topup Game Terpercaya</p>
+            <div class="hero-stats-row">
+                <div class="hero-stat"><i class="fas fa-star"></i><span class="stat-value">4.9</span><span class="stat-label">Rating</span></div>
+                <div class="hero-stat"><i class="fas fa-users"></i><span class="stat-value">8.2K</span><span class="stat-label">Pelanggan</span></div>
+                <div class="hero-stat"><i class="fas fa-bolt"></i><span class="stat-value">24/7</span><span class="stat-label">Support</span></div>
+            </div>
+        </div>
+
+        <div class="flash-sale-bar" id="flashSaleBar">
+            <div class="flash-sale-info">
+                <i class="fas fa-fire"></i>
+                <div class="flash-sale-text">
+                    <span class="highlight">FLASH SALE</span> — Diskon 50% Panel Pterodactyl!
+                </div>
+            </div>
+            <div class="countdown-timer" id="countdownTimer">
+                <div class="countdown-item"><span class="num" id="cdHours">04</span><span class="label">Jam</span></div>
+                <div class="countdown-item"><span class="num" id="cdMinutes">32</span><span class="label">Menit</span></div>
+                <div class="countdown-item"><span class="num" id="cdSeconds">15</span><span class="label">Detik</span></div>
+            </div>
+        </div>
+
+        <div class="store-header">
+            <div class="store-name">
+                JOELL SHOP
+                <span class="rating"><i class="fas fa-star"></i> 4.9 <span style="font-weight:400;opacity:0.7">(1,234 Reviews)</span></span>
+                <span class="badge-free"><i class="fas fa-check-circle"></i> Free Fee Admin</span>
+            </div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="search-wrap">
+            <div class="search-box">
+                <i class="fas fa-search" style="color:var(--text-muted);margin-right:10px;"></i>
+                <input type="text" id="searchInput" placeholder="Cari produk digital..." onkeyup="if(event.key==='Enter') doSearch()">
+                <button onclick="doSearch()">Cari</button>
+            </div>
+        </div>
+
+        <div class="server-status-bar">
+            <div class="server-status-header">
+                <h3><i class="fas fa-server"></i> Server Status</h3>
+                <button class="status-refresh" id="refreshStatus" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+            </div>
+            <div class="server-grid" id="serverGrid">
+                <div class="server-item"><div class="server-dot"></div><div class="server-info"><div class="server-name">Node-1 Jakarta</div><div class="server-meta">Panel Pterodactyl</div></div><div class="server-ping">12ms</div></div>
+                <div class="server-item"><div class="server-dot"></div><div class="server-info"><div class="server-name">Node-2 Singapore</div><div class="server-meta">Bot Hosting</div></div><div class="server-ping">24ms</div></div>
+                <div class="server-item"><div class="server-dot warning"></div><div class="server-info"><div class="server-name">Node-3 Tokyo</div><div class="server-meta">Game Server</div></div><div class="server-ping" style="color:var(--orange)">89ms</div></div>
+                <div class="server-item"><div class="server-dot"></div><div class="server-info"><div class="server-name">API Gateway</div><div class="server-meta">Main API</div></div><div class="server-ping">5ms</div></div>
+            </div>
+        </div>
+
+        <!-- PROMO -->
+        <div class="promo-section">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <i class="fas fa-ticket-alt" style="color:var(--accent-light);"></i>
+                <span style="font-weight:700;font-size:0.9rem;">Punya Kode Promo?</span>
+            </div>
+            <div class="promo-input-wrap">
+                <input type="text" id="promoInput" placeholder="Masukkan kode promo..." style="text-transform:uppercase;">
+                <button id="promoBtn">Gunakan</button>
+            </div>
+            <div class="promo-message" id="promoMessage"></div>
+        </div>
+
+        <div class="section-title">Hosting & Kebutuhan Bot</div>
+        <div class="grid-menu" id="gridHosting"></div>
+
+        <div class="section-title">Jasa Script Bot WhatsApp</div>
+        <div class="grid-menu" id="gridScript"></div>
+
+        <div class="section-title">Topup Game</div>
+        <div class="grid-menu" id="gridTopup"></div>
+
+        <!-- TESTIMONIALS -->
+        <div class="section-title">Testimoni Pelanggan</div>
+        <div class="testimonials-carousel" id="testimonialsCarousel">
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar">AD</div>
+                    <div class="testimonial-info">
+                        <h4>Ahmad D.</h4>
+                        <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Panel Pterodactyl-nya super stabil! Bot WhatsApp saya online 24/7 tanpa kendala. Supportnya juga cepat respon."</p>
+                <div class="testimonial-date"><i class="fas fa-clock"></i> 2 jam yang lalu</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,var(--green),var(--accent-secondary));">RS</div>
+                    <div class="testimonial-info">
+                        <h4>Rina S.</h4>
+                        <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Script Lily Gen 2 worth it banget! Fitur lengkap dan auto show JKT48-nya keren. Recommended seller!"</p>
+                <div class="testimonial-date"><i class="fas fa-clock"></i> 5 jam yang lalu</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,var(--orange),var(--red));">MF</div>
+                    <div class="testimonial-info">
+                        <h4>M. Fadli</h4>
+                        <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Topup game cepat banget, langsung masuk. Harga juga paling murah dibanding yang lain. Mantap Joell Shop!"</p>
+                <div class="testimonial-date"><i class="fas fa-clock"></i> 1 hari yang lalu</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <div class="testimonial-avatar" style="background:linear-gradient(135deg,var(--purple),var(--accent));">DK</div>
+                    <div class="testimonial-info">
+                        <h4>Dewi K.</h4>
+                        <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    </div>
+                </div>
+                <p class="testimonial-text">"Jasa rename script 100% worth it. Hasilnya bersih dan aman. Bakal repeat order buat project selanjutnya!"</p>
+                <div class="testimonial-date"><i class="fas fa-clock"></i> 2 hari yang lalu</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORDERS PAGE -->
+    <div class="page" id="page-orders">
+        <div class="tracking-detail-box">
+            <h2><i class="fas fa-shopping-bag" style="color:var(--accent-light);"></i> Pesanan Saya</h2>
+            <p class="subtitle">Riwayat dan status semua pesanan Anda</p>
+            <div id="ordersListContainer">
+                <div class="empty-orders">
+                    <i class="fas fa-box-open"></i>
+                    <h3>Belum ada pesanan</h3>
+                    <p>Yuk mulai berbelanja!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+        <div class="profile-page">
+            <div id="userProfileView" style="display:none;">
+                <div class="profile-header-new">
+                    <img class="profile-cover-new" src="https://files.catbox.moe/iai8aa.png" alt="cover">
+                    <div class="profile-avatar-wrap">
+                        <img id="userProfileImg" src="https://ui-avatars.com/api/?name=User" alt="avatar">
+                        <button class="edit-profile-btn" onclick="openProfileSettings()"><i class="fas fa-edit"></i></button>
+                    </div>
+                </div>
+                <div class="profile-info-new">
+                    <h2 id="userProfileName">User Name</h2>
+                    <p id="userProfileEmail">user@example.com</p>
+                    <div class="profile-stats-new">
+                        <div class="stat-box">
+                            <span class="stat-num" id="statOrderCount">0</span>
+                            <span class="stat-label">Pesanan</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num">Verified</span>
+                            <span class="stat-label">Status</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-menu-list">
+                    <div class="menu-item" onclick="navigateTo('orders')">
+                        <i class="fas fa-history"></i>
+                        <span>Riwayat Pesanan</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item" onclick="openProfileSettings()">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Edit Profil</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item" onclick="window.open('https://wa.me/6287751755160','_blank')">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Bantuan Support</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="menu-item logout" id="btnProfileLogoutPage">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Keluar Akun</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="guestProfileView" class="cart-empty" style="padding: 60px 20px;">
+                <i class="fas fa-user-circle" style="font-size: 4rem; color: var(--accent); margin-bottom: 20px;"></i>
+                <h3>Belum Login</h3>
+                <p>Silakan login untuk melihat dan mengatur profil Anda.</p>
+                <button class="btn-checkout" onclick="document.getElementById('loginOverlay').classList.add('open')" style="margin-top:20px; width:auto; padding: 12px 40px;">LOGIN SEKARANG</button>
+            </div>
+
+            <div class="profile-footer-info" style="margin-top: 40px; padding: 20px; border-top: 1px solid var(--border-subtle); text-align: center;">
+                <p style="font-size: 0.8rem; color: var(--text-muted);">JOELL SHOP v2.4.0 • Digital Solutions</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRACKING PAGE -->
+    <div class="page" id="page-tracking">
+        <div class="tracking-detail-box">
+            <h2><i class="fas fa-shipping-fast" style="color:var(--accent-light);"></i> Lacak Pesanan</h2>
+            <p class="subtitle">Masukkan ID pesanan untuk melihat status detail</p>
+            <div style="display:flex;gap:10px;margin-bottom:24px;">
+                <input type="text" id="trackInput" placeholder="JOELL-XXXX-XXXX" style="flex:1;padding:12px 16px;border-radius:60px;border:1px solid var(--border-subtle);background:var(--bg-primary);color:var(--text-primary);font-size:0.9rem;outline:none;font-family:var(--font-mono);">
+                <button id="trackBtn" style="padding:12px 24px;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;border:none;border-radius:60px;font-weight:700;cursor:pointer;white-space:nowrap;"><i class="fas fa-search"></i> Lacak</button>
+            </div>
+            <div id="trackResult" style="display:none;">
+                <div style="background:var(--bg-primary);border-radius:var(--radius-xs);padding:16px;border:1px solid var(--border-subtle);margin-bottom:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                        <span style="font-weight:700;font-family:var(--font-mono);color:var(--accent-light);" id="trackOrderId">#JOELL-0000-0000</span>
+                        <span id="trackStatusBadge" style="background:rgba(16,185,129,0.15);color:var(--green);padding:4px 12px;border-radius:30px;font-size:0.75rem;font-weight:700;"><i class="fas fa-check-circle"></i> Selesai</span>
+                    </div>
+                    <div id="trackProducts" style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:8px;">Panel Pterodactyl 4GB RAM × 1</div>
+                    <div style="color:var(--text-muted);font-size:0.75rem;" id="trackDate">21 Juli 2026 · 14:32 WIB</div>
+                </div>
+                <div class="tracking-timeline" id="trackingTimeline">
+                    <div class="tracking-step completed">
+                        <div class="tracking-dot"><i class="fas fa-check"></i></div>
+                        <div class="tracking-info">
+                            <h4>Pesanan Diterima</h4>
+                            <p>Pesanan Anda telah kami terima dan sedang diproses</p>
+                            <div class="time">21 Jul 2026, 14:32 WIB</div>
+                        </div>
+                    </div>
+                    <div class="tracking-step completed">
+                        <div class="tracking-dot"><i class="fas fa-check"></i></div>
+                        <div class="tracking-info">
+                            <h4>Pembayaran Diverifikasi</h4>
+                            <p>Pembayaran berhasil dikonfirmasi oleh sistem</p>
+                            <div class="time">21 Jul 2026, 14:35 WIB</div>
+                        </div>
+                    </div>
+                    <div class="tracking-step completed">
+                        <div class="tracking-dot"><i class="fas fa-check"></i></div>
+                        <div class="tracking-info">
+                            <h4>Sedang Diproses</h4>
+                            <p>Tim teknis sedang menyiapkan pesanan Anda</p>
+                            <div class="time">21 Jul 2026, 14:40 WIB</div>
+                        </div>
+                    </div>
+                    <div class="tracking-step active">
+                        <div class="tracking-dot"><i class="fas fa-box"></i></div>
+                        <div class="tracking-info">
+                            <h4>Pesanan Selesai</h4>
+                            <p>Detail akses telah dikirim ke akun Anda</p>
+                            <div class="time">21 Jul 2026, 15:00 WIB</div>
+                        </div>
+                    </div>
+                </div>
+                <button id="trackChatBtn" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;border:none;border-radius:60px;font-weight:700;cursor:pointer;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;">
+                    <i class="fas fa-comments"></i> Chat Admin Terkait Pesanan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PAGE -->
+    <div class="admin-page" id="page-admin">
+        <div id="adminLoginView">
+            <div class="admin-login-box">
+                <div style="font-size:3rem;color:var(--accent-light);margin-bottom:8px;"><i class="fas fa-shield-alt"></i></div>
+                <h2>Admin Panel</h2>
+                <p>Masukkan password untuk mengakses dashboard admin</p>
+                <input type="password" id="adminPasswordInput" placeholder="••••••••">
+                <button id="adminLoginBtn"><i class="fas fa-lock"></i> Masuk Admin</button>
+                <button id="adminBackBtn" style="margin-top:12px;background:transparent;color:var(--text-muted);border:1px solid var(--border-subtle);">Kembali ke Toko</button>
+            </div>
+        </div>
+        <div id="adminDashboardView" style="display:none;">
+            <div class="tracking-detail-box" style="margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <h2><i class="fas fa-shield-alt" style="color:var(--accent-light);"></i> Admin Dashboard</h2>
+                            <span class="badge" id="adminChatBadge" style="display:none;position:static;padding:2px 10px;font-size:0.8rem;">0</span>
+                        </div>
+                        <p class="subtitle">Kelola pesanan dan chat pelanggan</p>
+                    </div>
+                    <button onclick="refreshAdminOrders()" class="header-btn" title="Refresh Data" id="btnRefreshAdmin">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="admin-stats-grid">
+                <div class="admin-stat-card">
+                    <div class="num" id="adminStatTotal">0</div>
+                    <div class="label">Total Pesanan</div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="num" id="adminStatPending">0</div>
+                    <div class="label">Menunggu</div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="num" id="adminStatProcessing">0</div>
+                    <div class="label">Diproses</div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="num" id="adminStatCompleted">0</div>
+                    <div class="label">Selesai</div>
+                </div>
+            </div>
+            <div class="admin-section" style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2);">
+                <h3><i class="fas fa-cloud"></i> Cloud Sync Status</h3>
+                <div id="cloudStatusIndicator" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:rgba(0,0,0,0.2);margin-top:10px;">
+                    <div id="cloudStatusDot" style="width:12px;height:12px;border-radius:50%;background:var(--text-muted);"></div>
+                    <span id="cloudStatusText" style="font-size:0.9rem;color:var(--text-secondary);">Mengecek koneksi database...</span>
+                </div>
+                <p style="color:var(--text-muted);font-size:0.75rem;margin-top:8px;">Database cloud memungkinkan chat real-time antar perangkat berbeda secara otomatis.</p>
+            </div>
+            <div class="admin-section">
+                <h3><i class="fas fa-shopping-bag"></i> Semua Pesanan</h3>
+                <div id="adminOrdersList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- CART OVERLAY -->
+<div class="cart-overlay" id="cartOverlay">
+    <div class="cart-panel">
+        <div class="cart-header">
+            <div class="cart-title"><i class="fas fa-shopping-cart"></i> Keranjang <span class="cart-badge-total" id="cartBadgeTotal">0</span></div>
+            <button class="cart-close" id="cartCloseBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items-container" id="cartItems"></div>
+        <div class="cart-footer" id="cartFooter">
+            <div class="cart-summary">
+                <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">Rp 0</span></div>
+                <div class="summary-row"><span>Diskon</span><span id="cartDiscount">Rp 0</span></div>
+                <div class="summary-row"><span>Ongkir</span><span id="cartShipping">Rp 0</span></div>
+                <div class="summary-row total"><span>Total</span><span class="total-price" id="cartTotalDisplay">Rp 0</span></div>
+            </div>
+            <div class="cart-actions">
+                <button class="btn-checkout" id="checkoutBtn"><i class="fas fa-credit-card"></i> Checkout Sekarang</button>
+                <button class="btn-clear" id="clearCartBtn"><i class="fas fa-trash-alt"></i> Kosongkan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkoutOverlay">
+    <div class="modal-box">
+        <button class="modal-close" id="checkoutCloseBtn"><i class="fas fa-times"></i></button>
+        <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:4px;"><i class="fas fa-credit-card" style="color:var(--accent-light);"></i> Checkout</h2>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Lengkapi data pengiriman pesanan</p>
+        <div class="order-summary-box">
+            <h4><i class="fas fa-shopping-bag"></i> Ringkasan Pesanan</h4>
+            <div id="checkoutItems"></div>
+            <div class="order-item-line total" id="checkoutTotal">Total: Rp 0</div>
+        </div>
+        <form class="checkout-form" id="checkoutForm">
+            <div class="form-group">
+                <label><i class="fas fa-user"></i> Nama Lengkap</label>
+                <input type="text" id="coName" placeholder="Nama penerima" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Email</label>
+                <input type="email" id="coEmail" placeholder="email@example.com" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-phone"></i> Nomor WhatsApp</label>
+                <input type="tel" id="coPhone" placeholder="08123456789" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-map-marker-alt"></i> Alamat / Catatan</label>
+                <textarea id="coAddress" rows="3" placeholder="Catatan tambahan untuk pesanan..."></textarea>
+            </div>
+            <button type="submit" class="btn-place-order"><i class="fas fa-check-circle"></i> Buat Pesanan</button>
+        </form>
+    </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="detail-overlay" id="detailOverlay">
+    <div class="detail-modal">
+        <button class="detail-close" id="detailCloseBtn"><i class="fas fa-times"></i></button>
+        <h2 id="detailName">Nama Produk</h2>
+        <div class="price-tag" id="detailPrice">Rp 0</div>
+        <p class="desc" id="detailDesc">Deskripsi produk.</p>
+        <div class="variant-title"><i class="fas fa-layer-group"></i> Pilih Varian:</div>
+        <div class="variant-list" id="variantList"></div>
+        <div class="action-btns">
+            <button class="add-cart-btn" id="addToCartBtn"><i class="fas fa-cart-plus"></i> Keranjang</button>
+            <button class="buy-now-btn" id="buyNowBtn"><i class="fas fa-bolt"></i> Beli Langsung</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOPUP MODAL -->
+<div class="modal-overlay" id="topupOverlay">
+    <div class="modal-box">
+        <button class="modal-close" id="topupCloseBtn"><i class="fas fa-times"></i></button>
+        <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:4px;"><i class="fas fa-gamepad" style="color:var(--accent-light);"></i> Topup All Game</h2>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Pilih game favoritmu:</p>
+        <div class="topup-grid" id="topupGrid"></div>
+    </div>
+</div>
+
+<!-- ===== LOGIN MODAL (dengan Tab Registrasi/Login) ===== -->
+<div class="modal-overlay" id="loginOverlay">
+    <div class="modal-box" style="max-width:440px; border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: 0 0 40px rgba(0,0,0,0.6);">
+        <button class="modal-close" id="loginCloseBtn"><i class="fas fa-times"></i></button>
+        <div class="login-box">
+            <div style="position: relative; display: inline-block; margin-bottom: 20px;">
+                <div style="font-size:4rem; color:var(--accent); filter: drop-shadow(0 0 15px var(--accent-glow));">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div style="position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; background: var(--green); border-radius: 50%; border: 3px solid var(--bg-card-solid); box-shadow: 0 0 10px var(--green-glow);"></div>
+            </div>
+
+            <!-- TAB SWITCHER -->
+            <div class="login-tabs" style="display: flex; gap: 8px; background: var(--bg-primary); border-radius: 60px; padding: 4px; margin-bottom: 24px;">
+                <button class="login-tab active" data-tab="login" style="flex:1; padding: 10px; border: none; border-radius: 60px; font-weight: 800; font-size: 0.9rem; cursor: pointer; background: var(--accent); color: #fff; transition: 0.3s;">Masuk</button>
+                <button class="login-tab" data-tab="register" style="flex:1; padding: 10px; border: none; border-radius: 60px; font-weight: 800; font-size: 0.9rem; cursor: pointer; background: transparent; color: var(--text-secondary); transition: 0.3s;">Daftar</button>
+            </div>
+
+            <!-- FORM LOGIN -->
+            <div id="loginForm" style="display: block;">
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 16px;">Masuk dengan akun yang sudah terdaftar.</p>
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <input type="text" id="loginIdentifier" placeholder="Nama atau Email" style="padding: 14px; border-radius: 60px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+                    <input type="password" id="loginPassword" placeholder="Password" style="padding: 14px; border-radius: 60px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+                    <button id="loginSubmitBtn" onclick="handleLogin()" style="padding: 14px; background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff; border: none; border-radius: 60px; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.3s;">Masuk</button>
+                </div>
+                <div style="margin: 16px 0; text-align: center; color: var(--text-muted); font-size: 0.8rem;">atau</div>
+                <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_black" data-text="continue_with" data-size="large" data-logo_alignment="left" style="filter: drop-shadow(0 0 10px rgba(99,102,241,0.3));"></div>
+            </div>
+
+            <!-- FORM REGISTER -->
+            <div id="registerForm" style="display: none;">
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 16px;">Buat akun baru untuk bergabung.</p>
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <input type="text" id="regFirstName" placeholder="Nama Depan" style="padding: 14px; border-radius: 60px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+                    <input type="email" id="regEmail" placeholder="Email" style="padding: 14px; border-radius: 60px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+                    <input type="password" id="regPassword" placeholder="Password" style="padding: 14px; border-radius: 60px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+                    <input type="password" id="regConfirmPassword" placeholder="Konfirmasi Password" style="padding: 14px; border-radius: 60px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; outline: none;">
+                    <button id="registerSubmitBtn" onclick="handleRegister()" style="padding: 14px; background: linear-gradient(135deg, var(--green), #059669); color: #fff; border: none; border-radius: 60px; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.3s;">Daftar</button>
+                </div>
+            </div>
+
+            <p style="margin-top: 20px; font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">
+                <i class="fas fa-lock" style="margin-right: 4px;"></i> Data tersimpan aman di cloud Firebase.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- PROFILE SETTINGS MODAL -->
+<div class="modal-overlay" id="profileOverlay">
+    <div class="modal-box" style="max-width:400px; border: 1px solid rgba(99, 102, 241, 0.3);">
+        <button class="modal-close" id="profileCloseBtn"><i class="fas fa-times"></i></button>
+        <div class="profile-settings-box">
+            <h2 style="font-size: 1.5rem; font-weight: 900; margin-bottom: 24px; color: #fff;">PENGATURAN PROFIL</h2>
+            <div class="profile-avatar-edit">
+                <img id="profilePreview" src="https://ui-avatars.com/api/?name=User" alt="avatar">
+                <div class="edit-badge" onclick="document.getElementById('profilePhotoInput').click()"><i class="fas fa-camera"></i></div>
+                <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;" onchange="handleProfilePhotoUpload(this)">
+            </div>
+            <div class="profile-input-group">
+                <label>Nama Tampilan</label>
+                <input type="text" id="profileNameInput" placeholder="Masukkan nama Anda...">
+            </div>
+            <div class="profile-input-group">
+                <label>Email (Read-only)</label>
+                <input type="email" id="profileEmailInput" readonly style="opacity:0.6; cursor:not-allowed;">
+            </div>
+            <div class="profile-actions">
+                <button class="btn-profile-logout" id="profileLogoutBtn">LOGOUT</button>
+                <button class="btn-profile-save" id="profileSaveBtn">SIMPAN</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ORDER CHAT MODAL -->
+<div class="modal-overlay" id="orderChatOverlay">
+    <div class="modal-box order-chat-modal">
+        <div class="order-chat-header">
+            <button onclick="document.getElementById('orderChatOverlay').classList.remove('open')" style="background:none;border:none;color:#8696a0;font-size:1.2rem;margin-right:10px;cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <img src="https://files.catbox.moe/ijemcy.png" alt="admin">
+            <div class="info">
+                <h3>Admin JOELL SHOP</h3>
+                <p id="orderChatOrderId">Order: #JOELL-0000-0000</p>
+            </div>
+            <button class="modal-close" id="orderChatCloseBtn" style="position:static;color:#8696a0;font-size:1.2rem;margin-left:auto;"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="order-chat-messages" id="orderChatMessages"></div>
+        <div class="order-chat-input-wrap">
+            <button class="chat-attach-btn" onclick="document.getElementById('orderChatFile').click()"><i class="fas fa-paperclip"></i></button>
+            <input type="file" id="orderChatFile" accept="image/*" style="display:none;" onchange="handleChatFileUpload(this, 'user')">
+            <div class="input-container">
+                <input type="text" id="orderChatInput" placeholder="Ask me anything...">
+                <button id="orderChatSend"><i class="fas fa-arrow-up"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN CHAT MODAL -->
+<div class="modal-overlay" id="adminChatOverlay">
+    <div class="modal-box order-chat-modal">
+        <div class="order-chat-header">
+            <button onclick="document.getElementById('adminChatOverlay').classList.remove('open')" style="background:none;border:none;color:#8696a0;font-size:1.2rem;margin-right:10px;cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <div class="testimonial-avatar" id="adminChatUserImg" style="width:44px;height:44px;font-size:1.2rem;background:linear-gradient(135deg,var(--green),var(--accent)); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fas fa-user"></i></div>
+            <div class="info">
+                <h3 id="adminChatUserName">Chat Pelanggan</h3>
+                <p id="adminChatOrderId">Order: #JOELL-0000-0000</p>
+            </div>
+            <button class="modal-close" id="adminChatCloseBtn" style="position:static;color:#8696a0;font-size:1.2rem;margin-left:auto;"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="order-chat-messages" id="adminChatMessages"></div>
+        <div class="order-chat-input-wrap">
+            <button class="chat-attach-btn" onclick="document.getElementById('adminChatFile').click()" title="Upload Gambar"><i class="fas fa-image"></i></button>
+            <button class="chat-attach-btn" onclick="document.getElementById('adminDocFile').click()" title="Upload File/Script"><i class="fas fa-file-code"></i></button>
+            <input type="file" id="adminChatFile" accept="image/*" style="display:none;" onchange="handleChatFileUpload(this, 'admin')">
+            <input type="file" id="adminDocFile" accept=".json,.zip,.txt,.js,.html" style="display:none;" onchange="handleAdminDocUpload(this)">
+            <div class="input-container">
+                <input type="text" id="adminChatInput" placeholder="Reply to customer...">
+                <button id="adminChatSend"><i class="fas fa-arrow-up"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="paymentOverlay">
+    <div class="modal-box payment-modal">
+        <button class="modal-close" id="paymentCloseBtn"><i class="fas fa-times"></i></button>
+        
+        <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:4px;">
+            <i class="fas fa-credit-card" style="color:var(--accent-light);"></i> Pembayaran
+        </h2>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Selesaikan pembayaran pesanan Anda</p>
+        
+        <div class="payment-section">
+            <div class="section-label"><i class="fas fa-shopping-bag"></i> Ringkasan Pesanan</div>
+            <div class="order-summary-box">
+                <div id="paymentOrderItems"></div>
+                <div class="order-item-line total" id="paymentOrderTotal">Total: Rp 0</div>
+            </div>
+        </div>
+
+        <div class="payment-section">
+            <div class="section-label"><i class="fas fa-credit-card"></i> Metode Pembayaran</div>
+            <div class="payment-methods">
+                <button class="payment-method-btn active" data-method="qris">
+                    <i class="fas fa-qrcode"></i> QRIS
+                </button>
+                <button class="payment-method-btn" data-method="bank">
+                    <i class="fas fa-university"></i> Bank Transfer
+                </button>
+            </div>
+
+            <div id="paymentQrisSection">
+                <div class="payment-qris-container" id="qrisContainer">
+                    <div class="qris-placeholder" id="qrisPlaceholder">
+                        <div style="text-align:center;">
+                            <i class="fas fa-qrcode" style="font-size:3rem;color:var(--accent-light);display:block;margin-bottom:8px;"></i>
+                            <p style="font-weight:700;color:var(--text-primary);margin-bottom:4px;">Siap Membuat Invoice</p>
+                            <small style="color:var(--text-muted);display:block;">Klik tombol di bawah untuk generate QRIS dari LZPedia</small>
+                        </div>
+                    </div>
+                    <div id="qrisImageWrapper" style="display:none;">
+                        <img id="qrisImage" src="" alt="QRIS Code" loading="lazy">
+                        <p class="qris-success-text">
+                            <i class="fas fa-check-circle"></i> Scan QRIS untuk membayar
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="payment-details" id="paymentDetails" style="display:none;">
+                    <div class="detail-row">
+                        <span class="label">Invoice ID</span>
+                        <span class="value" id="invoiceId" style="font-family:var(--font-mono);font-size:0.8rem;">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Total</span>
+                        <span class="value total" id="invoiceTotal">Rp 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Biaya Admin</span>
+                        <span class="value" id="invoiceFee">Rp 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status</span>
+                        <span class="value"><span class="payment-status-badge pending" id="invoiceStatusBadge">⏳ Menunggu</span></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Kadaluarsa</span>
+                        <span class="value" id="invoiceExpiry">-</span>
+                    </div>
+                </div>
+
+                <div class="payment-timer" id="paymentTimer" style="display:none;">
+                    <i class="fas fa-hourglass-half"></i> <span id="timerDisplay">15:00</span>
+                </div>
+
+                <div class="payment-actions">
+                    <button class="btn-pay" id="createInvoiceBtn"><i class="fas fa-qrcode"></i> Buat Invoice</button>
+                    <button class="btn-check-status" id="checkStatusBtn" style="display:none;"><i class="fas fa-sync-alt"></i> Cek Status</button>
+                </div>
+            </div>
+
+            <div id="paymentBankSection" style="display:none;">
+                <div class="payment-details">
+                    <div class="detail-row">
+                        <span class="label">Bank</span>
+                        <span class="value">BCA</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Nomor Rekening</span>
+                        <span class="value" style="font-family:var(--font-mono);">1234567890</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Atas Nama</span>
+                        <span class="value">JOELL SHOP</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Total</span>
+                        <span class="value total" id="bankTotal">Rp 0</span>
+                    </div>
+                </div>
+                <p style="color:var(--text-muted);font-size:0.8rem;text-align:center;margin:8px 0;">
+                    <i class="fas fa-info-circle"></i> Transfer sesuai total dan kirim bukti ke admin
+                </p>
+                <button class="btn-pay" onclick="copyBankInfo()"><i class="fas fa-copy"></i> Salin Info Bank</button>
+            </div>
+        </div>
+
+        <div class="payment-section" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle);">
+            <div class="section-label"><i class="fas fa-file-invoice"></i> Riwayat Invoice Saya</div>
+            <div class="invoice-history-list" id="invoiceHistoryList">
+                <div style="text-align:center;padding:20px;color:var(--text-muted);">
+                    <i class="fas fa-file-invoice" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.5;"></i>
+                    <p>Belum ada invoice</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TOAST & BACK TO TOP -->
+<!-- ============================================================ -->
+<div class="toast-container" id="toastContainer"></div>
+<button class="back-to-top" id="backToTop" title="Kembali ke atas">
+    <i class="fas fa-arrow-up"></i>
+</button>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" data-page="home" id="navHome"><i class="fas fa-home"></i> Beranda</button>
+    <button class="nav-item" data-page="orders" id="navOrders"><i class="fas fa-shopping-bag"></i> Pesanan <span class="badge" id="navOrdersBadge" style="display:none;">0</span></button>
+    <button class="nav-item" id="navCart" data-page="cart"><i class="fas fa-shopping-cart"></i> Keranjang <span class="badge" id="navCartBadge">0</span></button>
+    <button class="nav-item" data-page="tracking" id="navTracking"><i class="fas fa-shipping-fast"></i> Lacak</button>
+    <button class="nav-item" data-page="profile" id="navProfile"><i class="fas fa-user"></i> Profil</button>
+</nav>
+
+<script src="script.js"></script>
+<script src="payment-api.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ JOELL SHOP Initialized');
+        if (typeof renderMenus === 'function') renderMenus();
+        if (typeof renderTopupGames === 'function') renderTopupGames();
+        if (typeof updateCartUI === 'function') updateCartUI();
+        if (typeof updateUserUI === 'function') updateUserUI();
+        if (typeof renderOrdersList === 'function') renderOrdersList();
+        if (typeof renderProfilePage === 'function') renderProfilePage();
+        console.log('✅ All systems ready!');
+    });
+</script>
+</body>
+</html>

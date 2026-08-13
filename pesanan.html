@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JOELL SHOP · Pesanan Saya</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- ✅ TAMBAHKAN INI -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="payment.css">
+</head>
+<body>
+<canvas id="particlesCanvas"></canvas>
+
+<div class="app-container">
+    <!-- HEADER -->
+    <header class="top-header">
+        <div class="logo-area" id="logoArea" title="Klik 5x untuk Mode Admin">
+            <img src="https://files.catbox.moe/ijemcy.png" alt="logo" loading="lazy">
+            <span>JOELL SHOP</span>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" id="themeToggle" title="Toggle Dark/Light Mode">
+                <i class="fas fa-moon"></i>
+            </button>
+            <div id="userSection">
+                <button class="header-btn" id="loginBtn" title="Login">
+                    <i class="fas fa-sign-in-alt"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ORDERS PAGE -->
+    <div class="page active" id="page-orders">
+        <div class="tracking-detail-box">
+            <h2><i class="fas fa-shopping-bag" style="color:var(--accent-light);"></i> Pesanan Saya</h2>
+            <p class="subtitle">Riwayat dan status semua pesanan Anda</p>
+            <div id="ordersListContainer">
+                <div class="empty-orders">
+                    <i class="fas fa-box-open"></i>
+                    <h3>Belum ada pesanan</h3>
+                    <p>Yuk mulai berbelanja!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ORDER CHAT MODAL -->
+<div class="modal-overlay" id="orderChatOverlay">
+    <div class="modal-box order-chat-modal">
+        <div class="order-chat-header">
+            <button onclick="document.getElementById('orderChatOverlay').classList.remove('open')" style="background:none;border:none;color:#8696a0;font-size:1.2rem;margin-right:10px;cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <img src="https://files.catbox.moe/ijemcy.png" alt="admin">
+            <div class="info">
+                <h3>Admin JOELL SHOP</h3>
+                <p id="orderChatOrderId">Order: #JOELL-0000-0000</p>
+            </div>
+            <button class="modal-close" id="orderChatCloseBtn" style="position:static;color:#8696a0;font-size:1.2rem;margin-left:auto;"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="order-chat-messages" id="orderChatMessages"></div>
+        <div class="order-chat-input-wrap">
+            <button class="chat-attach-btn" onclick="document.getElementById('orderChatFile').click()"><i class="fas fa-paperclip"></i></button>
+            <input type="file" id="orderChatFile" accept="image/*" style="display:none;" onchange="handleChatFileUpload(this, 'user')">
+            <div class="input-container">
+                <input type="text" id="orderChatInput" placeholder="Ask me anything...">
+                <button id="orderChatSend"><i class="fas fa-arrow-up"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" id="backToTop" title="Kembali ke atas">
+    <i class="fas fa-arrow-up"></i>
+</button>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item" data-page="home" id="navHome"><i class="fas fa-home"></i> Beranda</button>
+    <button class="nav-item active" data-page="orders" id="navOrders"><i class="fas fa-shopping-bag"></i> Pesanan <span class="badge" id="navOrdersBadge" style="display:none;">0</span></button>
+    <button class="nav-item" id="navCart" data-page="cart"><i class="fas fa-shopping-cart"></i> Keranjang <span class="badge" id="navCartBadge">0</span></button>
+    <button class="nav-item" data-page="tracking" id="navTracking"><i class="fas fa-shipping-fast"></i> Lacak</button>
+    <button class="nav-item" data-page="profile" id="navProfile"><i class="fas fa-user"></i> Profil</button>
+</nav>
+
+<script src="script.js"></script>
+<script src="payment-api.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedPage = localStorage.getItem('joellCurrentPage');
+        if (savedPage && savedPage !== 'orders' && document.getElementById('page-' + savedPage)) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + savedPage).classList.add('active');
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.page === savedPage) item.classList.add('active');
+            });
+            document.getElementById('bottomNav').style.display = 'flex';
+            document.getElementById('page-admin').classList.remove('active');
+            if (savedPage === 'orders') renderOrdersList();
+            if (savedPage === 'profile') renderProfilePage();
+        } else {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-orders').classList.add('active');
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.page === 'orders') item.classList.add('active');
+            });
+            document.getElementById('bottomNav').style.display = 'flex';
+            document.getElementById('page-admin').classList.remove('active');
+            renderOrdersList();
+        }
+    });
+</script>
+</body>
+</html>

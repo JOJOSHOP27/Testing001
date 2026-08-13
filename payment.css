@@ -1,0 +1,314 @@
+.payment-modal .modal-box {
+    max-width: 520px;
+}
+
+/* Payment Methods Grid */
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.payment-method-btn {
+    padding: 16px;
+    border-radius: 12px;
+    border: 2px solid var(--border-subtle);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.payment-method-btn:hover {
+    border-color: var(--accent);
+}
+
+.payment-method-btn.active {
+    border-color: var(--accent);
+    background: rgba(99,102,241,0.1);
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* QRIS CONTAINER */
+.payment-qris-container {
+    text-align: center;
+    margin: 16px 0;
+    padding: 24px 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 2px dashed var(--border-subtle);
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.payment-qris-container .qris-placeholder {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.payment-qris-container .qris-placeholder i {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 12px;
+    color: var(--accent-light);
+}
+
+.payment-qris-container .qris-placeholder small {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+#qrisImageWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+}
+
+#qrisImageWrapper img {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    border: 1px solid #e5e7eb;
+}
+
+#qrisImageWrapper .qris-success-text {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--green);
+    font-weight: 600;
+}
+
+#qrisImageWrapper .qris-success-text i {
+    margin-right: 4px;
+}
+
+/* PAYMENT DETAILS */
+.payment-details {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--border-subtle);
+    margin: 12px 0;
+}
+
+.payment-details .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.payment-details .detail-row:last-child {
+    border-bottom: none;
+}
+
+.payment-details .detail-row .label {
+    color: var(--text-muted);
+}
+
+.payment-details .detail-row .value {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.payment-details .detail-row .value.total {
+    color: var(--accent-light);
+    font-size: 1.1rem;
+}
+
+/* Status Badge */
+.payment-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.payment-status-badge.pending {
+    background: rgba(251,191,36,0.15);
+    color: #fbbf24;
+}
+
+.payment-status-badge.paid {
+    background: rgba(16,185,129,0.15);
+    color: #10b981;
+}
+
+.payment-status-badge.expired {
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+}
+
+/* Payment Timer */
+.payment-timer {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--accent-light);
+    text-align: center;
+    margin: 12px 0;
+    padding: 10px;
+    background: rgba(99,102,241,0.05);
+    border-radius: 12px;
+}
+
+.payment-timer.expired {
+    color: #ef4444;
+}
+
+/* Payment Actions */
+.payment-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.payment-actions .btn-pay {
+    flex: 1;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--green), #059669);
+    color: #fff;
+    border: none;
+    border-radius: 60px;
+    font-weight: 800;
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.payment-actions .btn-pay:hover:not(:disabled) {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px var(--green-glow);
+}
+
+.payment-actions .btn-pay:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.payment-actions .btn-check-status {
+    padding: 14px 20px;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 60px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.payment-actions .btn-check-status:hover {
+    border-color: var(--accent);
+    color: var(--accent-light);
+}
+
+.payment-actions .btn-copy-link {
+    padding: 14px 20px;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 60px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.payment-actions .btn-copy-link:hover {
+    border-color: var(--accent);
+    color: var(--accent-light);
+}
+
+/* Section Label */
+.payment-section {
+    margin-bottom: 20px;
+}
+
+.payment-section .section-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+}
+
+.payment-section .section-label i {
+    color: var(--accent-light);
+}
+
+/* History */
+.invoice-history-list {
+    margin-top: 14px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.invoice-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+}
+
+/* Invoice History Clickable */
+.invoice-history-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.invoice-history-item:hover {
+    background: rgba(99,102,241,0.05);
+    border-color: var(--accent);
+    transform: translateX(4px);
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .payment-methods {
+        grid-template-columns: 1fr 1fr;
+    }
+    .payment-actions {
+        flex-direction: column;
+    }
+    .payment-actions .btn-pay {
+        width: 100%;
+    }
+    
+    #qrisImageWrapper img {
+        max-width: 200px;
+    }
+}
